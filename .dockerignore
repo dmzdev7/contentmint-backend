@@ -1,0 +1,34 @@
+# Dependencias locales (Se deben instalar dentro del contenedor para la arquitectura correcta)
+node_modules/
+jspm_packages/
+
+# Archivos de logs
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Directorios de compilación y caché
+dist/
+.npm/
+.pnpm-store/
+.cache/
+
+# Variables de entorno (No queremos secretos locales en la imagen)
+.env
+.env.*
+!.env.example
+
+# Git y configuración de editores
+.git/
+.gitignore
+.vscode/
+.idea/
+
+# Documentación
+README.md
+LICENSE
+
+# Archivos de Docker (No se necesitan dentro de la imagen)
+Dockerfile
+docker-compose.yml
+.dockerignore
