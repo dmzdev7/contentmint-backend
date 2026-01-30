@@ -1,0 +1,49 @@
+# --- DEPENDENCIES ---
+node_modules/
+.pnp
+.pnp.js
+
+# --- TESTING ---
+coverage/
+
+# --- TYPESCRIPT / BUILD ---
+# Ignoramos la carpeta de salida definida en tu package.json (dist)
+lib/
+dist/
+*.tsbuildinfo
+
+# --- ENVIROMENT VARIABLES ---
+# Muy importante: NUNCA subir secretos. 
+# Solo permitimos archivos de ejemplo o plantillas.
+.env
+.env.development
+.env.local
+.env.production
+.env.test
+!.env.example
+
+# --- PRISMA ---
+# Ignoramos el directorio generado por Prisma para evitar conflictos de tipos en CI/CD
+# y porque se regenera con 'prisma generate'
+/src/generated/
+
+# --- LOGS ---
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# --- OS / IDE ---
+.DS_Store
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# --- DOCKER ---
+.docker/
