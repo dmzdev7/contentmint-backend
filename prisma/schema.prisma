@@ -1,0 +1,84 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Modelos
+model User {
+  id String @id @default(uuid())
+  email String @unique
+  name String
+  password String
+  role Role @default(USER)
+  isActive Boolean @default(true)
+  isVerified Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relaciones
+  refreshTokens RefreshToken[]
+  verificationTokens VerificationToken[]
+  passwordResetTokens PasswordResetToken[]
+
+ // Mapea el nombre de la tabla en la base de datos
+  @@map("users")
+}
+
+model RefreshToken {
+  id String @id @default(uuid())
+  token String @unique
+  userId String
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  
+  // Relaciones
+  user User @relation(fields: [userId], references: [id])
+
+  // Mapea el nombre de la tabla en la base de datos
+  @@map("refresh_tokens")
+}
+
+model VerificationToken {
+  id String @id @default(uuid())
+  token String @unique
+  userId String
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  // Relaciones
+  user User @relation(fields: [userId], references: [id])
+
+  // Mapea el nombre de la tabla en la base de datos
+  @@map("verification_tokens")
+}
+
+// Enums
+enum Role {
+  ADMIN
+  USER
+  MODERATOR
+}
+
+model PasswordResetToken {
+  id String @id @default(uuid())
+  token String @unique
+  userId String
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  // Relaciones
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Mapea el nombre de la tabla en la base de datos
+  @@map("password_reset_tokens")
+}
