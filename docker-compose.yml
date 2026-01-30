@@ -1,0 +1,36 @@
+services:
+  # Base de datos para DESARROLLO
+  db:
+    image: postgres:latest
+    container_name: ContentMint_db_dev
+    env_file:
+      - .env.development
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - '${DB_PORT}:5432'
+    volumes:
+      - pgdata_dev:/var/lib/postgresql
+    restart: always
+
+  # Base de datos para TESTS
+  db_test:
+    image: postgres:latest
+    container_name: ContentMint_db_test
+    env_file:
+      - .env.test
+    environment:
+      POSTGRES_USER: ${DB_USER_TEST}
+      POSTGRES_PASSWORD: ${DB_PASSWORD_TEST}
+      POSTGRES_DB: ${DB_NAME_TEST}
+    ports:
+      - '${DB_PORT_TEST}:5432'
+    volumes:
+      - pgdata_test:/var/lib/postgresql
+    restart: on-failure
+
+volumes:
+  pgdata_dev:
+  pgdata_test:
