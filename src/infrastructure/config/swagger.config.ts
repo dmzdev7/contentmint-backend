@@ -163,9 +163,9 @@ const options: swaggerJsdoc.Options = {
   swaggerDefinition,
   // Rutas donde buscar anotaciones JSDoc
   apis: [
-    './src/routes/*.ts',
-    './src/controllers/**/*.ts',
-    './src/shared/validators/*.ts',
+    './src/api/routes/*.ts',
+    './src/api/controllers/**/*.ts',
+    './src/api/shared/validators/*.ts',
   ],
 }
 
