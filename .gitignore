@@ -2,38 +2,36 @@
 node_modules/
 .pnp
 .pnp.js
+pnpm-debug.log*
 
 # --- TESTING ---
 coverage/
+*.lcov
 
 # --- TYPESCRIPT / BUILD ---
-# Ignoramos la carpeta de salida definida en tu package.json (dist)
-lib/
 dist/
+lib/
 *.tsbuildinfo
 
-# --- ENVIROMENT VARIABLES ---
-# Muy importante: NUNCA subir secretos. 
-# Solo permitimos archivos de ejemplo o plantillas.
+# --- ENVIRONMENT VARIABLES ---
+# Bloqueamos todos los archivos .env por seguridad
 .env
 .env.development
 .env.local
 .env.production
 .env.test
+# Permitimos únicamente la plantilla de ejemplo
 !.env.example
 
 # --- PRISMA ---
-# Ignoramos el directorio generado por Prisma para evitar conflictos de tipos en CI/CD
-# y porque se regenera con 'prisma generate'
-/src/generated/
+/prisma/generated/
 
 # --- LOGS ---
-logs
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-pnpm-debug.log*
 
 # --- OS / IDE ---
 .DS_Store
@@ -47,3 +45,5 @@ pnpm-debug.log*
 
 # --- DOCKER ---
 .docker/
+# Ignoramos los datos locales de la DB si usas volúmenes locales
+# pgdata/
