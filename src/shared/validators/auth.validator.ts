@@ -1,4 +1,5 @@
 import z from 'zod'
+import sanitize from 'sanitize-html'
 
 // Definimos una regex para los requisitos de seguridad
 // (?=.*[0-9]) -> Al menos un número
@@ -21,7 +22,11 @@ export const registerSchema = z.object({
       name: z
         .string()
         .min(2, 'El nombre debe tener al menos 2 caracteres')
-        .max(20, 'El nombre no puede exceder 20 caracteres'),
+        .max(20, 'El nombre no puede exceder 20 caracteres')
+        .transform((val) => sanitize(val, {
+        allowedTags: [],
+        allowedAttributes: {}
+      }).trim()), // De paso quitamos espacios extra,
       email: z.string().email('Email inválido'),
       password: passwordValidation,
       passwordConfirm: passwordValidation,
