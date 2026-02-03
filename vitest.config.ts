@@ -7,6 +7,8 @@ export default defineConfig({
     environment: 'node',
     setupFiles: ['./tests/setup.ts'],
     include: ['src/**/*.test.ts', 'tests/**/*.test.ts'],
+    fileParallelism: false, // Ejecuta un archivo tras otro
+    maxWorkers: 1,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov'],
@@ -28,6 +30,7 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
       '@db': path.resolve(__dirname, './prisma/generated'),
       '@tests': path.resolve(__dirname, './tests'),
+      'tests': path.resolve(__dirname, './tests'),
     },
   },
 })
