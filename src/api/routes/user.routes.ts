@@ -8,7 +8,7 @@ const router: Router = Router();
 // get perfil del usuario autenticado
 /**
  * @swagger
- * /users/me:
+ * /users/profile:
  *   get:
  *     summary: Obtener perfil del usuario autenticado
  *     tags: [Users]
