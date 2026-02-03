@@ -2,6 +2,8 @@ import prisma from '@/infrastructure/lib/prisma.js'
 import { generateAccessToken, generateRefreshToken } from '@/shared/utils/jwt.util.js'
 import type { Role, User } from '@db/index.js'
 import bcrypt from 'bcrypt'
+import { expect } from 'vitest'
+import request from 'supertest';
 
 /**
  * Crea un usuario de prueba
@@ -109,4 +111,45 @@ export async function createPasswordResetToken(userId: string) {
   })
 
   return token
+}
+
+/**
+ * Verifica estructura de respuesta exitosa
+ */
+export function expectSuccessResponse(
+  response: request.Response,
+  statusCode: number = 200,
+) {
+  expect(response.status).toBe(statusCode)
+  expect(response.body.status).toBe('success')
+  expect(response.body.data).toBeDefined()
+}
+
+/**
+ * Verifica estructura de error estándar
+ */
+export function expectErrorResponse(
+  response: request.Response,
+  statusCode: number,
+  messageContains?: string | string[],
+) {
+  expect(response.status).toBe(statusCode)
+  expect(response.body.status).toBe('error')
+  expect(response.body.message).toBeDefined()
+  expect(typeof response.body.message).toBe('string')
+
+  if (messageContains) {
+    const message = response.body.message.toLowerCase()
+    
+    if (Array.isArray(messageContains)) {
+      // Verificar que contenga AL MENOS UNO de los textos
+      const hasAnyMatch = messageContains.some(text => 
+        message.includes(text.toLowerCase())
+      )
+      expect(hasAnyMatch).toBe(true)
+    } else {
+      // Verificar que contenga el texto específico
+      expect(message).toContain(messageContains.toLowerCase())
+    }
+  }
 }
