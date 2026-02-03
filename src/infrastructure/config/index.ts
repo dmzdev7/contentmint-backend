@@ -34,6 +34,8 @@ const envSchema = z.object({
   // JWT
   JWT_ACCESS_SECRET: z.string().min(10),
   JWT_REFRESH_SECRET: z.string().min(10),
+  JWT_ACCESS_EXPIRATION: z.string().default('15m'),
+  JWT_REFRESH_EXPIRATION: z.string().default('7d'),
 
   // --- NUEVOS CAMPOS ---
   // Transformamos el string separado por comas en un Array de URLs
@@ -80,6 +82,8 @@ export const config = {
   jwt: {
     secret: envServer.JWT_ACCESS_SECRET,
     refreshSecret: envServer.JWT_REFRESH_SECRET,
+    accessExpiration: envServer.JWT_ACCESS_EXPIRATION,
+    refreshExpiration: envServer.JWT_REFRESH_EXPIRATION,
   },
   rateLimit: {
     windowMs: envServer.RATE_LIMIT_WINDOW_MS,
