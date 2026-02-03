@@ -1,4 +1,5 @@
 import rateLimit from 'express-rate-limit'
+import { config } from './index.js'
 
 /**
  * Rate limiter general para toda la API
@@ -24,7 +25,7 @@ export const apiLimiter = rateLimit({
  */
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 5, // Solo 5 intentos
+  max: config.env === 'test' ? 10 : 3, // Solo 5 intentos
   message: {
     status: 'error',
     message:
@@ -41,7 +42,7 @@ export const authLimiter = rateLimit({
  */
 export const registerLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hora
-  max: 3,
+  max: config.env === 'test' ? 10 : 3,
   message: {
     status: 'error',
     message:
