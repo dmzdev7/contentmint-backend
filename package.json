@@ -20,7 +20,8 @@
     "test:coverage": "vitest run --coverage",
     "test:all": "vitest run",
     "db:test:migrate": "NODE_ENV=test prisma migrate dev",
-    "db:test:generate": "NODE_ENV=test prisma generate"
+    "db:test:generate": "NODE_ENV=test prisma generate",
+    "db:test:studio": "NODE_ENV=test prisma studio"
   },
   "keywords": [],
   "author": "",
@@ -39,6 +40,7 @@
     "node-cron": "^4.2.1",
     "pg": "^8.17.1",
     "resend": "^6.8.0",
+    "sanitize-html": "^2.17.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
     "winston": "^3.19.0",
@@ -53,6 +55,7 @@
     "@types/node": "^25.0.9",
     "@types/node-cron": "^3.0.11",
     "@types/pg": "^8.16.0",
+    "@types/sanitize-html": "^2.16.0",
     "@types/supertest": "^6.0.3",
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.8",
