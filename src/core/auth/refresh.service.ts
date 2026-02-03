@@ -10,14 +10,16 @@ import { logoutAllService } from './logout.service.js'
 /**
  * Gestiona la renovación de credenciales mediante Refresh Token Rotation.
  * Implementa una estrategia de detección de reutilización de tokens para prevenir ataques de robo de sesión.
- * * @async
+ * 
+ * @async
  * @param {string} refreshToken - Token de refresco actual enviado por el cliente.
  * @throws {Error} INVALID_REFRESH_TOKEN - Si el token no tiene una firma válida.
  * @throws {Error} TOKEN_REUSE_DETECTED - Si se intenta usar un token ya invalidado (Alerta de seguridad).
  * @throws {Error} REFRESH_TOKEN_EXPIRED - Si el token ha superado su fecha de validez.
  * @throws {Error} USER_INACTIVE - Si el usuario ha sido suspendido o desactivado.
  * @returns {Promise<RefreshResponse>} Nuevo par de tokens (Access y Refresh) y datos públicos del usuario.
- * * @description
+ * 
+ * @description
  * El servicio realiza una "Rotación de Refresh Tokens":
  * 1. Valida el token actual.
  * 2. Verifica si el token ya fue usado anteriormente (detección de anomalías).
@@ -25,15 +27,10 @@ import { logoutAllService } from './logout.service.js'
  * 4. Si todo es correcto, emite un nuevo par de tokens y elimina el anterior en una transacción atómica.
  */
 export const refreshTokenService = async (refreshToken: string) => {
-  // 1. Verificar que el refresh token sea válido
-  let decoded
-  try {
-    decoded = verifyRefreshToken(refreshToken)
-  } catch (error) {
-    throw new Error('INVALID_REFRESH_TOKEN')
-  }
+  // 1. Verificar JWT (firma y expiración)
+  const decoded = verifyRefreshToken(refreshToken)
 
-  // 2. Verificar que el refresh token exista en la base de datos
+  // 2. Buscar el token en BD con información del usuario en una sola consulta
   const tokenRecord = await prisma.refreshToken.findUnique({
     where: { token: refreshToken },
     include: {
@@ -49,74 +46,91 @@ export const refreshTokenService = async (refreshToken: string) => {
     },
   })
 
-  // 3. DETECCIÓN DE ROBO: Si el token no existe pero es válido según JWT
+  // 3. DETECCIÓN DE ROBO: Token válido según JWT pero no existe en BD
   if (!tokenRecord) {
-    // CAMBIO: Usar logSecurity para que quede guardado en el archivo de logs
     logSecurity({
       action: 'TOKEN_REUSE_DETECTED',
       userId: decoded.userId,
       success: false,
-      reason: 'Valid JWT but missing in DB (possible theft)',
+      reason: 'Valid JWT but missing in DB (possible token reuse or theft)',
+      // metadata: { tokenId: decoded.jti },
     })
 
-    // Invalidar TODAS las sesiones
-    try {
-      await logoutAllService(decoded.userId)
-
-      logInfo('Security recovery: All sessions invalidated', {
-        userId: decoded.userId,
+    // Invalidar TODAS las sesiones del usuario de forma asíncrona
+    // No bloqueamos la respuesta por esto
+    await logoutAllService(decoded.userId)
+      .then(() => {
+        logInfo('Security recovery: All sessions invalidated', {
+          userId: decoded.userId,
+        })
       })
-    } catch (error) {
-      logError('Failed to invalidate sessions during security recovery', {
-        error,
+      .catch((error) => {
+        logError('Failed to invalidate sessions during security recovery', {
+          error,
+          userId: decoded.userId,
+        })
       })
-    }
 
     // Aquí podrías enviar un email al usuario:
-    // await sendSecurityAlert(decoded.email, 'Actividad sospechosa detectada')
+    // sendSecurityAlert(decoded.email, 'Actividad sospechosa detectada').catch(logError)
 
     throw new Error('TOKEN_REUSE_DETECTED')
   }
 
-  // 4. Verificar si el token ha expirado
+  // 4. Verificar expiración del token (ahora que sabemos que existe)
   if (tokenRecord.expiresAt < new Date()) {
-    await prisma.refreshToken.delete({
-      where: { token: refreshToken },
-    })
+    // Limpiar token expirado de forma asíncrona
+    await prisma.refreshToken
+      .delete({ where: { token: refreshToken } })
+      .catch((error) => {
+        logError('Failed to delete expired token', { error })
+      })
+
     throw new Error('REFRESH_TOKEN_EXPIRED')
   }
 
   // 5. Verificar si el usuario está activo
-  if (!tokenRecord.user.isActive) throw new Error('USER_INACTIVE')
+  if (!tokenRecord.user.isActive) {
+    logSecurity({
+      action: 'INACTIVE_USER_REFRESH_ATTEMPT',
+      userId: tokenRecord.user.id,
+      success: false,
+      reason: 'User account is inactive',
+    })
+    throw new Error('USER_INACTIVE')
+  }
 
-  // 6. Generar un nuevo access token
-  const tokenPayload = {
+  // 6. Preparar payload para los nuevos tokens
+  const payload = {
     userId: tokenRecord.user.id,
     email: tokenRecord.user.email,
     role: tokenRecord.user.role,
   }
 
-  const newAccessToken = generateAccessToken(tokenPayload)
+  const newAccessToken = generateAccessToken(payload)
 
-  // 7. Generar un nuevo refresh token y actualizar la base de datos
-  const newRefreshToken = generateRefreshToken(tokenPayload)
-  // Calcular nueva fecha de expiración
+  // 7. ROTACIÓN: Generar NUEVO refresh token
+  const newRefreshToken = generateRefreshToken(payload)
+
+  // 8. Calcular nueva fecha de expiración
   const expiresAt = new Date()
-  expiresAt.setDate(expiresAt.getDate() + 7)
+  expiresAt.setDate(expiresAt.getDate() + 7) // 7 días
 
-  // Realizamos ambas operaciones en una transacción
-  await prisma.$transaction([
-    prisma.refreshToken.delete({ where: { token: refreshToken } }),
-    prisma.refreshToken.create({
-      data: {
-        token: newRefreshToken,
-        userId: tokenRecord.user.id,
-        expiresAt,
-      },
-    }),
-  ])
+  // 9. IMPORTANTE: Eliminar el token viejo PRIMERO
+  await prisma.refreshToken.delete({
+    where: { token: refreshToken },
+  })
 
-  // 8. Retornar los nuevos tokens
+  // 10. Guardar el nuevo token
+  await prisma.refreshToken.create({
+    data: {
+      token: newRefreshToken,
+      userId: tokenRecord.user.id,
+      expiresAt,
+    },
+  })
+
+  // 11. Retornar NUEVOS tokens
   return {
     accessToken: newAccessToken,
     refreshToken: newRefreshToken,
