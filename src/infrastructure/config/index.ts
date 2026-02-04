@@ -1,26 +1,16 @@
 import dotenv from 'dotenv'
-import path from 'path'
-import z from 'zod'
+import { z } from 'zod'
 
-dotenv.config()
+// Solo carga el .env manualmente si no se han inyectado variables externas (como en tests)
+if (process.env.NODE_ENV !== 'test') {
+  dotenv.config()
+}
 
-// Determinamos qué archivo específico cargar
-const envFile = process.env.NODE_ENV === 'test' 
-  ? '.env.test' 
-  : '.env.development'
-
-
-dotenv.config({
-  path: path.resolve(process.cwd(), envFile),
-  override: true,
-})
-
-// 1. Esquema de validación con Zod
 const envSchema = z.object({
   APP_NAME: z.string().default('ContentMint'),
   PORT: z.string().default('4000').transform(Number),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  BASE_URL: z.string().url().default('http://localhost'),
+  BASE_URL: z.string().url().catch('http://localhost:4000'),
   API_PREFIX: z.string().default('/api/v1'),
   FRONTEND_URL: z.string().url().default('http://localhost:3000'),
   
@@ -37,8 +27,7 @@ const envSchema = z.object({
   JWT_ACCESS_EXPIRATION: z.string().default('15m'),
   JWT_REFRESH_EXPIRATION: z.string().default('7d'),
 
-  // --- NUEVOS CAMPOS ---
-  // Transformamos el string separado por comas en un Array de URLs
+  // CORS
   ALLOWED_ORIGINS: z.string()
     .default('http://localhost:3000,http://localhost:5173')
     .transform((val) => val.split(',').map(url => url.trim())),
@@ -48,19 +37,17 @@ const envSchema = z.object({
   RATE_LIMIT_MAX_REQUESTS: z.string().default('100').transform(Number),
 })
 
-// 2. Validación
-let envServer: z.infer<typeof envSchema>
+// Validación
+const parsed = envSchema.safeParse(process.env)
 
-try {
-  envServer = envSchema.parse(process.env)
-} catch (error) {
-  if (error instanceof z.z.ZodError) {
-    console.error('❌ Error: Variables de entorno inválidas:', JSON.stringify(error.flatten().fieldErrors, null, 2))
-  }
+if (!parsed.success) {
+  console.error('❌ Error: Variables de entorno inválidas:', 
+    JSON.stringify(parsed.error.flatten().fieldErrors, null, 2))
   process.exit(1)
 }
 
-// 3. Exportar configuración limpia
+const envServer = parsed.data
+
 export const config = {
   appName: envServer.APP_NAME,
   port: envServer.PORT,
